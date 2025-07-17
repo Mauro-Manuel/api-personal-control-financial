@@ -1,6 +1,7 @@
 package com.masprog.controller;
 
 import com.masprog.dto.RecipeDTO;
+import com.masprog.dto.RecipeResponseDTO;
 import com.masprog.model.Recipe;
 import com.masprog.service.RecipeService;
 import org.springframework.http.HttpStatus;
@@ -21,8 +22,8 @@ public class RecipeController {
     }
 
     @PostMapping
-    public ResponseEntity<Recipe> createRecipe(@RequestBody RecipeDTO recipeDTO){
-       Recipe created = recipeService.createRecipe(recipeDTO);
+    public ResponseEntity<RecipeResponseDTO> createRecipe(@RequestBody RecipeDTO recipeDTO){
+       RecipeResponseDTO created = recipeService.createRecipe(recipeDTO);
        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 }
