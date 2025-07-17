@@ -1,4 +1,4 @@
-package com.masprog.execption;
+package com.masprog.exceptions;
 
 import java.util.Date;
 
