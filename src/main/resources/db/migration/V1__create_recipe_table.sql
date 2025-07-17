@@ -1,0 +1,11 @@
+CREATE TABLE tb_recipe (
+id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+origin VARCHAR(50) NOT NULL,
+value DECIMAL(10, 2) NOT NULL,
+destination VARCHAR(255) NOT NULL,
+received_date DATE NOT NULL,
+month INT,
+year INT,
+created_at DATE NOT NULL,
+updated_at DATE
+);
