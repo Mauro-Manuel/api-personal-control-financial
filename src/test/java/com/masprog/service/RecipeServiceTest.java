@@ -12,21 +12,29 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 
 @ExtendWith(MockitoExtension.class)
 public class RecipeServiceTest {
+
 
     @Mock
     private RecipeRepository recipeRepository;
 
     @InjectMocks
     private RecipeService recipeService;
+
+    private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
 
     @Test
     void shouldSaveRecipe_whenValidDTO_thenReturnResponseDTO() {
@@ -59,4 +67,64 @@ public class RecipeServiceTest {
         assertEquals(requestDTO.getDestination(), responseDTO.getDestination());
         assertEquals(requestDTO.getReceivedDate(), responseDTO.getReceivedDate());
     }
+
+    @Test
+    void shouldHaveViolation_whenValueIsNegative() {
+        RecipeDTO dto = new RecipeDTO();
+        dto.setValue(BigDecimal.valueOf(-50));
+        dto.setOrigin(RecipeOrigin.SALARIO);
+        dto.setDestination("Banco BAI");
+        dto.setReceivedDate(LocalDate.of(2025, 7, 1));
+
+        Set<ConstraintViolation<RecipeDTO>> violations = validator.validate(dto);
+
+        assertFalse(violations.isEmpty());
+        violations.forEach(v -> System.out.println(v.getPropertyPath() + ": " + v.getMessage()));
+    }
+
+    @Test
+    void shouldHaveViolation_whenValueIsNull() {
+        RecipeDTO dto = new RecipeDTO();
+        dto.setValue(null); // obrigatório
+        dto.setOrigin(RecipeOrigin.SALARIO);
+        dto.setDestination("Banco BAI");
+        dto.setReceivedDate(LocalDate.of(2025, 7, 1));
+
+        Set<ConstraintViolation<RecipeDTO>> violations = validator.validate(dto);
+
+        assertFalse(violations.isEmpty());
+    }
+
+    @Test
+    void shouldHaveViolation_whenReceivedDateIsInFuture() {
+        RecipeDTO dto = new RecipeDTO();
+        dto.setValue(BigDecimal.valueOf(100));
+        dto.setOrigin(RecipeOrigin.SALARIO);
+        dto.setDestination("Banco BAI");
+        dto.setReceivedDate(LocalDate.now().plusDays(10)); // futura
+
+        Set<ConstraintViolation<RecipeDTO>> violations = validator.validate(dto);
+
+        assertFalse(violations.isEmpty());
+    }
+
+    @Test
+    void shouldThrowRuntimeException_whenRepositoryFails() {
+        RecipeDTO dto = new RecipeDTO();
+        dto.setValue(BigDecimal.valueOf(1000));
+        dto.setOrigin(RecipeOrigin.SALARIO);
+        dto.setDestination("Banco BAI");
+        dto.setReceivedDate(LocalDate.of(2025, 7, 1));
+
+        Mockito.when(recipeRepository.save(any(Recipe.class)))
+                .thenThrow(new RuntimeException("Falha na base de dados"));
+
+        RuntimeException ex = org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class, () -> {
+            recipeService.createRecipe(dto);
+        });
+
+        assertEquals("Falha na base de dados", ex.getMessage());
+    }
+
+
 }
