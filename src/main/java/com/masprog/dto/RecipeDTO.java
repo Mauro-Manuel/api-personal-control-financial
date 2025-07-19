@@ -1,15 +1,29 @@
 package com.masprog.dto;
 
 import com.masprog.model.RecipeOrigin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PastOrPresent;
+import jakarta.validation.constraints.Positive;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Objects;
 
 public class RecipeDTO {
+
+    @NotNull(message = "Origin is required")
     private RecipeOrigin origin;
+
+    @NotNull(message = "Value is required")
+    @Positive(message = "Value must be positive")
     private BigDecimal value;
+
+    @NotBlank(message = "Destination is required")
     private String destination;
+
+    @NotNull(message = "Received date is required")
+    @PastOrPresent(message = "Received date must be in the past or present")
     private LocalDate receivedDate;
 
     public RecipeDTO(){}
