@@ -4,6 +4,7 @@ import com.masprog.dto.RecipeDTO;
 import com.masprog.dto.RecipeResponseDTO;
 import com.masprog.model.Recipe;
 import com.masprog.service.RecipeService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,7 +23,7 @@ public class RecipeController {
     }
 
     @PostMapping
-    public ResponseEntity<RecipeResponseDTO> createRecipe(@RequestBody RecipeDTO recipeDTO){
+    public ResponseEntity<RecipeResponseDTO> createRecipe( @RequestBody @Valid RecipeDTO recipeDTO){
        RecipeResponseDTO created = recipeService.createRecipe(recipeDTO);
        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
