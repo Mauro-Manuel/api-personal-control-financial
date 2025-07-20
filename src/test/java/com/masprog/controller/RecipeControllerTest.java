@@ -1,27 +1,39 @@
 package com.masprog.controller;
 
 import com.masprog.integration.AbstractIntegrationTest;
+import com.masprog.model.Recipe;
+import com.masprog.model.RecipeOrigin;
+import com.masprog.repository.RecipeRepository;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+//@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class RecipeControllerTest extends AbstractIntegrationTest {
 
     @LocalServerPort
     private int port;
 
+    @Autowired
+    private RecipeRepository recipeRepository;
+
     @BeforeEach
     void setUp() {
         RestAssured.baseURI = "http://localhost:" + port;
+        recipeRepository.deleteAll();
     }
 
     @Test
@@ -90,4 +102,120 @@ class RecipeControllerTest extends AbstractIntegrationTest {
                 .body("message", equalTo("Validation failed"))
                 .body("fieldErrors.receivedDate", equalTo("Received date must be in the past or present"));
     }
+
+    @Test
+    void testGetAllRecipesWithPagination() throws Exception {
+        // Arrange: Create test data
+        Recipe recipe1 = new Recipe();
+        recipe1.setOrigin(RecipeOrigin.SALARIO);
+        recipe1.setValue(new BigDecimal("100.00"));
+        recipe1.setDestination("Banco BAI");
+        recipe1.setReceivedDate(LocalDate.of(2025, 7, 19));
+        recipeRepository.save(recipe1);
+
+        Recipe recipe2 = new Recipe();
+        recipe2.setOrigin(RecipeOrigin.BONUS);
+        recipe2.setValue(new BigDecimal("200.00"));
+        recipe2.setDestination("Banco BIC");
+        recipe2.setReceivedDate(LocalDate.of(2025, 7, 18));
+        recipeRepository.save(recipe2);
+
+        // Act & Assert
+        given()
+                .contentType(ContentType.JSON)
+                .queryParam("page", 0)
+                .queryParam("size", 1)
+                .when()
+                .get("/api/v1/recipes")
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("content", hasSize(1))
+                .body("totalElements", equalTo(2))
+                .body("totalPages", equalTo(2))
+                .body("size", equalTo(1))
+                .body("number", equalTo(0));
+    }
+
+    @Test
+    void testGetAllRecipesWithFilters() throws Exception {
+        // Arrange: Create test data
+        Recipe recipe1 = new Recipe();
+        recipe1.setOrigin(RecipeOrigin.SALARIO);
+        recipe1.setValue(new BigDecimal("100.00"));
+        recipe1.setDestination("Banco BAI");
+        recipe1.setReceivedDate(LocalDate.of(2025, 7, 19));
+        recipeRepository.save(recipe1);
+
+        Recipe recipe2 = new Recipe();
+        recipe2.setOrigin(RecipeOrigin.APOSENTADORIA);
+        recipe2.setValue(new BigDecimal("200.00"));
+        recipe2.setDestination("Banco BIC");
+        recipe2.setReceivedDate(LocalDate.of(2025, 7, 18));
+        recipeRepository.save(recipe2);
+
+        // Act & Assert: Filter by origin and destination
+        given()
+                .contentType(ContentType.JSON)
+                .queryParam("origin", "SALARIO")
+                .queryParam("destination", "Banco BAI")
+                .queryParam("page", 0)
+                .queryParam("size", 10)
+                .when()
+                .get("/api/v1/recipes")
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("content", hasSize(1))
+                .body("content[0].origin", equalTo("SALARIO"))
+                .body("content[0].destination", equalTo("Banco BAI"))
+                .body("totalElements", equalTo(1));
+    }
+
+    @Test
+    void testGetAllRecipesWithDateRangeFilter() throws Exception {
+        // Arrange: Create test data
+        Recipe recipe1 = new Recipe();
+        recipe1.setOrigin(RecipeOrigin.SALARIO);
+        recipe1.setValue(new BigDecimal("100.00"));
+        recipe1.setDestination("Banco BAI");
+        recipe1.setReceivedDate(LocalDate.of(2025, 7, 19));
+        recipeRepository.save(recipe1);
+
+        Recipe recipe2 = new Recipe();
+        recipe2.setOrigin(RecipeOrigin.SALARIO);
+        recipe2.setValue(new BigDecimal("200.00"));
+        recipe2.setDestination("Banco BIC");
+        recipe2.setReceivedDate(LocalDate.of(2025, 6, 18));
+        recipeRepository.save(recipe2);
+
+        // Act & Assert: Filter by receivedDate range
+        given()
+                .contentType(ContentType.JSON)
+                .queryParam("receivedDateFrom", "2025-07-01")
+                .queryParam("receivedDateTo", "2025-07-31")
+                .queryParam("page", 0)
+                .queryParam("size", 10)
+                .when()
+                .get("/api/v1/recipes")
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("content", hasSize(1))
+                .body("content[0].receivedDate", equalTo("2025-07-19"))
+                .body("totalElements", equalTo(1));
+    }
+//
+//    @Disabled("Desativado, falta aplicar tratamento de exception no controller")
+//    @Test
+//    void testGetAllRecipesWithInvalidOrigin() {
+//        // Act & Assert: Invalid origin filter
+//        given()
+//                .contentType(ContentType.JSON)
+//                .queryParam("origin", "INVALID_ORIGIN")
+//                .queryParam("page", 0)
+//                .queryParam("size", 10)
+//                .when()
+//                .get("/api/v1/recipes")
+//                .then()
+//                .statusCode(HttpStatus.BAD_REQUEST.value())
+//                .body("message", equalTo("Invalid origin value"));
+//    }
 }

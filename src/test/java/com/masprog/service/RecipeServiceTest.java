@@ -1,28 +1,34 @@
 package com.masprog.service;
 
 import com.masprog.dto.RecipeDTO;
+import com.masprog.dto.RecipeFilterDTO;
 import com.masprog.dto.RecipeResponseDTO;
 import com.masprog.model.Recipe;
 import com.masprog.model.RecipeOrigin;
 import com.masprog.repository.RecipeRepository;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import jakarta.validation.ConstraintViolation;
-import jakarta.validation.Validation;
-import jakarta.validation.Validator;
-import jakarta.validation.ValidatorFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class RecipeServiceTest {
@@ -55,7 +61,7 @@ public class RecipeServiceTest {
         recipeEntity.setCreatedAt(LocalDate.now());
 
         // Simula o comportamento do repository
-        Mockito.when(recipeRepository.save(any(Recipe.class))).thenReturn(recipeEntity);
+        when(recipeRepository.save(any(Recipe.class))).thenReturn(recipeEntity);
 
         // Executa o método
         RecipeResponseDTO responseDTO = recipeService.createRecipe(requestDTO);
@@ -116,7 +122,7 @@ public class RecipeServiceTest {
         dto.setDestination("Banco BAI");
         dto.setReceivedDate(LocalDate.of(2025, 7, 1));
 
-        Mockito.when(recipeRepository.save(any(Recipe.class)))
+        when(recipeRepository.save(any(Recipe.class)))
                 .thenThrow(new RuntimeException("Falha na base de dados"));
 
         RuntimeException ex = org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class, () -> {
@@ -125,6 +131,33 @@ public class RecipeServiceTest {
 
         assertEquals("Falha na base de dados", ex.getMessage());
     }
+
+    @Test
+    void testGetAllRecipesWithFilter(){
+        RecipeFilterDTO filter = new RecipeFilterDTO();
+        filter.setOrigin(RecipeOrigin.SALARIO);
+        Pageable pageable = PageRequest.of(0, 10);
+
+        Recipe recipe = new Recipe();
+        recipe.setId(1L);
+        recipe.setOrigin(RecipeOrigin.SALARIO);
+        recipe.setValue(new BigDecimal("5000.00"));
+        recipe.setDestination("Banco BAI");
+        recipe.setReceivedDate(LocalDate.of(2025, 6,26));
+
+        Page<Recipe> recipePage = new PageImpl<>(Collections.singletonList(recipe));
+        // Explicitly cast the first argument to Specification<Recipe>
+        when(recipeRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(recipePage);
+
+        // Act
+        Page<RecipeResponseDTO> result = recipeService.getAllRecipes(filter, pageable);
+
+        // Assert
+        assertEquals(1, result.getTotalElements());
+        assertEquals(RecipeOrigin.SALARIO, result.getContent().get(0).getOrigin());
+    }
+
+
 
 
 }
