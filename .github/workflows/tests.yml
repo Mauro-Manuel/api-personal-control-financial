@@ -31,6 +31,9 @@ jobs:
       - name: Dar permissão ao Maven wrapper
         run: chmod +x mvnw
 
+      - name: Habilitar suporte ao Docker para Testcontainers
+        run: sudo systemctl start docker
+
       - name: Instalar dependências e rodar testes
         run: ./mvnw clean verify
 
