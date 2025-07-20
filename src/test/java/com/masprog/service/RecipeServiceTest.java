@@ -3,6 +3,8 @@ package com.masprog.service;
 import com.masprog.dto.RecipeDTO;
 import com.masprog.dto.RecipeFilterDTO;
 import com.masprog.dto.RecipeResponseDTO;
+import com.masprog.exceptions.RequiredObjectIsNullException;
+import com.masprog.exceptions.ResourceNotFoundException;
 import com.masprog.model.Recipe;
 import com.masprog.model.RecipeOrigin;
 import com.masprog.repository.RecipeRepository;
@@ -10,6 +12,7 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import org.junit.jupiter.api.Test;
+import static com.masprog.mapper.ObjectMapper.parseObject;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -23,11 +26,13 @@ import org.springframework.data.jpa.domain.Specification;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -156,6 +161,67 @@ public class RecipeServiceTest {
         assertEquals(1, result.getTotalElements());
         assertEquals(RecipeOrigin.SALARIO, result.getContent().get(0).getOrigin());
     }
+
+    @Test
+    void shouldReturnRecipeResponseDTO_whenGetRecipeByIdWithValidId() {
+        // Arrange
+        Long id = 1L;
+        Recipe recipe = new Recipe();
+        recipe.setId(id);
+        recipe.setOrigin(RecipeOrigin.SALARIO);
+        recipe.setValue(new BigDecimal("1000.00"));
+        recipe.setDestination("Banco BAI");
+        recipe.setReceivedDate(LocalDate.of(2025, 7, 1));
+        recipe.setCreatedAt(LocalDate.now());
+
+        RecipeResponseDTO responseDTO = new RecipeResponseDTO();
+        responseDTO.setId(id);
+        responseDTO.setOrigin(RecipeOrigin.SALARIO);
+        responseDTO.setValue(new BigDecimal("1000.00"));
+        responseDTO.setDestination("Banco BAI");
+        responseDTO.setReceivedDate(LocalDate.of(2025, 7, 1));
+        responseDTO.setCreatedAt(LocalDate.now());
+
+        when(recipeRepository.findById(id)).thenReturn(Optional.of(recipe));
+
+        // Mock do método estático parseObject
+        try (var mockedStatic = mockStatic(com.masprog.mapper.ObjectMapper.class)) {
+            mockedStatic.when(() -> parseObject(recipe, RecipeResponseDTO.class)).thenReturn(responseDTO);
+
+            // Act
+            RecipeResponseDTO result = recipeService.getRecipeById(id);
+
+            // Assert
+            assertNotNull(result);
+            assertEquals(id, result.getId());
+            assertEquals(recipe.getOrigin(), result.getOrigin());
+            assertEquals(recipe.getValue(), result.getValue());
+            assertEquals(recipe.getDestination(), result.getDestination());
+            assertEquals(recipe.getReceivedDate(), result.getReceivedDate());
+        }
+    }
+
+    @Test
+    void shouldThrowResourceNotFoundException_whenGetRecipeByIdWithNonExistentId() {
+        // Arrange
+        Long id = 999L;
+        when(recipeRepository.findById(id)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class,
+                () -> recipeService.getRecipeById(id));
+        assertEquals("Recipe not found with ID: " + id, exception.getMessage());
+    }
+
+    @Test
+    void shouldThrowIllegalArgumentException_whenGetRecipeByIdWithNullId() {
+        // Act & Assert
+        RequiredObjectIsNullException exception = assertThrows(RequiredObjectIsNullException.class,
+                () -> recipeService.getRecipeById(null));
+        assertEquals("It is not allowed to persist a null object!", exception.getMessage());
+    }
+
+
 
 
 

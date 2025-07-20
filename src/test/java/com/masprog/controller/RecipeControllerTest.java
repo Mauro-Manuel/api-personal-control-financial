@@ -218,4 +218,48 @@ class RecipeControllerTest extends AbstractIntegrationTest {
 //                .statusCode(HttpStatus.BAD_REQUEST.value())
 //                .body("message", equalTo("Invalid origin value"));
 //    }
+
+    @Test
+    void testGetRecipeByIdSuccess() {
+        // Arrange: Create test data
+        Recipe recipe = new Recipe();
+        recipe.setOrigin(RecipeOrigin.SALARIO);
+        recipe.setValue(new BigDecimal("100.00"));
+        recipe.setDestination("Banco BAI");
+        recipe.setReceivedDate(LocalDate.of(2025, 7, 19));
+        recipe = recipeRepository.save(recipe);
+
+        // Act & Assert
+        given()
+                .contentType(ContentType.JSON)
+                .when()
+                .get("/api/v1/recipes/" + recipe.getId())
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("id", equalTo(recipe.getId().intValue()))
+                .body("origin", equalTo("SALARIO"))
+                .body("value", equalTo(100.00f))
+                .body("destination", equalTo("Banco BAI"))
+                .body("receivedDate", equalTo("2025-07-19"));
+    }
+
+    @Test
+    void testGetRecipeByIdNotFound() {
+        given()
+                .contentType(ContentType.JSON)
+                .when()
+                .get("/api/v1/recipes/999")
+                .then()
+                .statusCode(HttpStatus.NOT_FOUND.value())
+                .body("message",equalTo("Recipe not found with ID: 999"));
+    }
+    @Test
+    void testGetRecipeByIdInvalidId() {
+        given()
+                .contentType(ContentType.JSON)
+                .when()
+                .get("/api/v1/recipes/invalid")
+                .then()
+                .statusCode(HttpStatus.BAD_REQUEST.value());
+    }
 }
