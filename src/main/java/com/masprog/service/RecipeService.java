@@ -4,6 +4,7 @@ import com.masprog.dto.RecipeDTO;
 import com.masprog.dto.RecipeFilterDTO;
 import com.masprog.dto.RecipeResponseDTO;
 import com.masprog.exceptions.RequiredObjectIsNullException;
+import com.masprog.exceptions.ResourceNotFoundException;
 import com.masprog.model.Recipe;
 import com.masprog.repository.RecipeRepository;
 import com.masprog.repository.RecipeSpecification;
@@ -46,4 +47,15 @@ public class RecipeService {
         return recipePage.map(recipe -> parseObject(recipe, RecipeResponseDTO.class));
 
     }
+
+    @Transactional(readOnly = true)
+    public RecipeResponseDTO getRecipeById(Long id) {
+        if (id == null) throw new RequiredObjectIsNullException();
+        logger.info("Retrieving Recipe with ID: {}", id);
+        Recipe recipe = recipeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Recipe not found with ID: " + id));
+        return parseObject(recipe, RecipeResponseDTO.class);
+    }
+
+
 }
