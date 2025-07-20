@@ -1,0 +1,2 @@
+# Define que todos os arquivos .java exigem aprovação de um usuário ou time específico
+*.java @masprog2022
