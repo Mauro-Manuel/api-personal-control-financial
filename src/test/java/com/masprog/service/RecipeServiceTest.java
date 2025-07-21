@@ -32,8 +32,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class RecipeServiceTest {
@@ -221,9 +220,86 @@ public class RecipeServiceTest {
         assertEquals("It is not allowed to persist a null object!", exception.getMessage());
     }
 
+    @Test
+    void shouldReturnRecipeResponseDTO_whenUpdateRecipeWithValidIdAndDTO() {
+        // Arrange
+        Long id = 1L;
+        RecipeDTO recipeDTO = new RecipeDTO();
+        recipeDTO.setOrigin(RecipeOrigin.SALARIO);
+        recipeDTO.setValue(new BigDecimal("5000.00"));
+        recipeDTO.setDestination("Test");
+        recipeDTO.setReceivedDate(LocalDate.now());
 
+        Recipe existingRecipe = new Recipe();
+        existingRecipe.setId(id);
+        existingRecipe.setOrigin(RecipeOrigin.SALARIO);
+        existingRecipe.setValue(new BigDecimal("1000.00"));
+        existingRecipe.setDestination("Old Destination");
+        existingRecipe.setReceivedDate(LocalDate.now().minusDays(1));
+        existingRecipe.setCreatedAt(LocalDate.now().minusDays(2));
 
+        RecipeResponseDTO responseDTO = new RecipeResponseDTO();
+        responseDTO.setId(id);
+        responseDTO.setOrigin(recipeDTO.getOrigin());
+        responseDTO.setValue(recipeDTO.getValue());
+        responseDTO.setDestination(recipeDTO.getDestination());
+        responseDTO.setReceivedDate(recipeDTO.getReceivedDate());
+        responseDTO.setMonth(recipeDTO.getReceivedDate().getMonthValue());
+        responseDTO.setYear(recipeDTO.getReceivedDate().getYear());
+        responseDTO.setCreatedAt(existingRecipe.getCreatedAt());
+        responseDTO.setUpdatedAt(LocalDate.now());
 
+        when(recipeRepository.findById(id)).thenReturn(Optional.of(existingRecipe));
+        when(recipeRepository.save(any(Recipe.class))).thenReturn(existingRecipe);
 
+        try (var mockedStatic = mockStatic(com.masprog.mapper.ObjectMapper.class)) {
+            mockedStatic.when(() -> parseObject(recipeDTO, Recipe.class)).thenReturn(existingRecipe);
+            mockedStatic.when(() -> parseObject(existingRecipe, RecipeResponseDTO.class)).thenReturn(responseDTO);
 
+            // Act
+            RecipeResponseDTO result = recipeService.updateRecipe(id, recipeDTO);
+
+            // Assert
+            assertNotNull(result);
+            assertEquals(id, result.getId());
+            assertEquals(recipeDTO.getOrigin(), result.getOrigin());
+            assertEquals(recipeDTO.getValue(), result.getValue());
+            assertEquals(recipeDTO.getDestination(), result.getDestination());
+            assertEquals(recipeDTO.getReceivedDate(), result.getReceivedDate());
+            assertEquals(recipeDTO.getReceivedDate().getMonthValue(), result.getMonth());
+            assertEquals(recipeDTO.getReceivedDate().getYear(), result.getYear());
+            assertEquals(existingRecipe.getCreatedAt(), result.getCreatedAt());
+            assertEquals(LocalDate.now(), result.getUpdatedAt());
+
+            verify(recipeRepository).findById(id);
+            verify(recipeRepository).save(any(Recipe.class));
+        }
+    }
+    @Test
+    void shouldThrowResourceNotFoundException_whenUpdateRecipeWithInvalidId() {
+        // Arrange
+        Long id = 999L;
+        RecipeDTO recipeDTO = new RecipeDTO();
+        recipeDTO.setOrigin(RecipeOrigin.SALARIO);
+        recipeDTO.setValue(new BigDecimal("5000.00"));
+        recipeDTO.setDestination("Test");
+        recipeDTO.setReceivedDate(LocalDate.now());
+
+        when(recipeRepository.findById(id)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(ResourceNotFoundException.class, () -> recipeService.updateRecipe(id, recipeDTO));
+        verify(recipeRepository).findById(id);
+        verify(recipeRepository, never()).save(any(Recipe.class));
+    }
+    @Test
+    void shouldThrowRequiredObjectIsNullException_whenUpdateRecipeWithNullDTO() {
+        // Arrange
+        Long id = 1L;
+
+        // Act & Assert
+        assertThrows(RequiredObjectIsNullException.class, () -> recipeService.updateRecipe(id, null));
+        verify(recipeRepository, never()).findById(anyLong());
+        verify(recipeRepository, never()).save(any(Recipe.class));
+    }
 }
