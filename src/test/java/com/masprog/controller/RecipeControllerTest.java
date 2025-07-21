@@ -21,7 +21,6 @@ import static org.hamcrest.Matchers.hasSize;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-//@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class RecipeControllerTest extends AbstractIntegrationTest {
 
     @LocalServerPort
@@ -30,382 +29,324 @@ class RecipeControllerTest extends AbstractIntegrationTest {
     @Autowired
     private RecipeRepository recipeRepository;
 
+    private static final BigDecimal VALID_VALUE = new BigDecimal("100.00");
+    private static final LocalDate VALID_DATE = LocalDate.of(2025, 7, 19);
+
     @BeforeEach
     void setUp() {
         RestAssured.baseURI = "http://localhost:" + port;
         recipeRepository.deleteAll();
     }
 
-    @Test
-    void testCreateRecipeWithInvalidData() {
-        String invalidJson = """
-            {
-                "origin": null,
-                "value": -10,
-                "destination": "",
-                "receivedDate": null
-            }
-            """;
-
-        given()
-                .contentType(ContentType.JSON)
-                .body(invalidJson)
-                .when()
-                .post("/api/v1/recipes")
-                .then()
-                .statusCode(HttpStatus.BAD_REQUEST.value())
-                .body("message", equalTo("Validation failed"))
-                .body("fieldErrors.origin", equalTo("Origin is required"))
-                .body("fieldErrors.value", equalTo("Value must be positive"))
-                .body("fieldErrors.destination", equalTo("Destination is required"))
-                .body("fieldErrors.receivedDate", equalTo("Received date is required"));
-    }
-
-    @Test
-    void testCreateRecipeWithValidData() {
-        String validJson = """
-            {
-                "origin": "SALARIO",
-                "value": 100.00,
-                "destination": "Banco BAI",
-                "receivedDate": "2025-07-19"
-            }
-            """;
-
-        given()
-                .contentType(ContentType.JSON)
-                .body(validJson)
-                .when()
-                .post("/api/v1/recipes")
-                .then()
-                .statusCode(HttpStatus.CREATED.value());
-    }
-
-    @Test
-    void testCreateRecipeWithFutureDate() {
-        String futureDateJson = """
-            {
-                "origin": "SALARIO",
-                "value": 100.00,
-                "destination": "Banco BAI",
-                "receivedDate": "2025-08-22"
-            }
-            """;
-
-        given()
-                .contentType(ContentType.JSON)
-                .body(futureDateJson)
-                .when()
-                .post("/api/v1/recipes")
-                .then()
-                .statusCode(HttpStatus.BAD_REQUEST.value())
-                .body("message", equalTo("Validation failed"))
-                .body("fieldErrors.receivedDate", equalTo("Received date must be in the past or present"));
-    }
-
-    @Test
-    void testGetAllRecipesWithPagination() throws Exception {
-        // Arrange: Create test data
-        Recipe recipe1 = new Recipe();
-        recipe1.setOrigin(RecipeOrigin.SALARIO);
-        recipe1.setValue(new BigDecimal("100.00"));
-        recipe1.setDestination("Banco BAI");
-        recipe1.setReceivedDate(LocalDate.of(2025, 7, 19));
-        recipeRepository.save(recipe1);
-
-        Recipe recipe2 = new Recipe();
-        recipe2.setOrigin(RecipeOrigin.BONUS);
-        recipe2.setValue(new BigDecimal("200.00"));
-        recipe2.setDestination("Banco BIC");
-        recipe2.setReceivedDate(LocalDate.of(2025, 7, 18));
-        recipeRepository.save(recipe2);
-
-        // Act & Assert
-        given()
-                .contentType(ContentType.JSON)
-                .queryParam("page", 0)
-                .queryParam("size", 1)
-                .when()
-                .get("/api/v1/recipes")
-                .then()
-                .statusCode(HttpStatus.OK.value())
-                .body("content", hasSize(1))
-                .body("totalElements", equalTo(2))
-                .body("totalPages", equalTo(2))
-                .body("size", equalTo(1))
-                .body("number", equalTo(0));
-    }
-
-    @Test
-    void testGetAllRecipesWithFilters() throws Exception {
-        // Arrange: Create test data
-        Recipe recipe1 = new Recipe();
-        recipe1.setOrigin(RecipeOrigin.SALARIO);
-        recipe1.setValue(new BigDecimal("100.00"));
-        recipe1.setDestination("Banco BAI");
-        recipe1.setReceivedDate(LocalDate.of(2025, 7, 19));
-        recipeRepository.save(recipe1);
-
-        Recipe recipe2 = new Recipe();
-        recipe2.setOrigin(RecipeOrigin.APOSENTADORIA);
-        recipe2.setValue(new BigDecimal("200.00"));
-        recipe2.setDestination("Banco BIC");
-        recipe2.setReceivedDate(LocalDate.of(2025, 7, 18));
-        recipeRepository.save(recipe2);
-
-        // Act & Assert: Filter by origin and destination
-        given()
-                .contentType(ContentType.JSON)
-                .queryParam("origin", "SALARIO")
-                .queryParam("destination", "Banco BAI")
-                .queryParam("page", 0)
-                .queryParam("size", 10)
-                .when()
-                .get("/api/v1/recipes")
-                .then()
-                .statusCode(HttpStatus.OK.value())
-                .body("content", hasSize(1))
-                .body("content[0].origin", equalTo("SALARIO"))
-                .body("content[0].destination", equalTo("Banco BAI"))
-                .body("totalElements", equalTo(1));
-    }
-
-    @Test
-    void testGetAllRecipesWithDateRangeFilter() throws Exception {
-        // Arrange: Create test data
-        Recipe recipe1 = new Recipe();
-        recipe1.setOrigin(RecipeOrigin.SALARIO);
-        recipe1.setValue(new BigDecimal("100.00"));
-        recipe1.setDestination("Banco BAI");
-        recipe1.setReceivedDate(LocalDate.of(2025, 7, 19));
-        recipeRepository.save(recipe1);
-
-        Recipe recipe2 = new Recipe();
-        recipe2.setOrigin(RecipeOrigin.SALARIO);
-        recipe2.setValue(new BigDecimal("200.00"));
-        recipe2.setDestination("Banco BIC");
-        recipe2.setReceivedDate(LocalDate.of(2025, 6, 18));
-        recipeRepository.save(recipe2);
-
-        // Act & Assert: Filter by receivedDate range
-        given()
-                .contentType(ContentType.JSON)
-                .queryParam("receivedDateFrom", "2025-07-01")
-                .queryParam("receivedDateTo", "2025-07-31")
-                .queryParam("page", 0)
-                .queryParam("size", 10)
-                .when()
-                .get("/api/v1/recipes")
-                .then()
-                .statusCode(HttpStatus.OK.value())
-                .body("content", hasSize(1))
-                .body("content[0].receivedDate", equalTo("2025-07-19"))
-                .body("totalElements", equalTo(1));
-    }
-//
-//    @Disabled("Desativado, falta aplicar tratamento de exception no controller")
-//    @Test
-//    void testGetAllRecipesWithInvalidOrigin() {
-//        // Act & Assert: Invalid origin filter
-//        given()
-//                .contentType(ContentType.JSON)
-//                .queryParam("origin", "INVALID_ORIGIN")
-//                .queryParam("page", 0)
-//                .queryParam("size", 10)
-//                .when()
-//                .get("/api/v1/recipes")
-//                .then()
-//                .statusCode(HttpStatus.BAD_REQUEST.value())
-//                .body("message", equalTo("Invalid origin value"));
-//    }
-
-    @Test
-    void testGetRecipeByIdSuccess() {
-        // Arrange: Create test data
+    private Recipe createRecipe(RecipeOrigin origin, BigDecimal value, String destination, LocalDate date) {
         Recipe recipe = new Recipe();
-        recipe.setOrigin(RecipeOrigin.SALARIO);
-        recipe.setValue(new BigDecimal("100.00"));
-        recipe.setDestination("Banco BAI");
-        recipe.setReceivedDate(LocalDate.of(2025, 7, 19));
-        recipe = recipeRepository.save(recipe);
-
-        // Act & Assert
-        given()
-                .contentType(ContentType.JSON)
-                .when()
-                .get("/api/v1/recipes/" + recipe.getId())
-                .then()
-                .statusCode(HttpStatus.OK.value())
-                .body("id", equalTo(recipe.getId().intValue()))
-                .body("origin", equalTo("SALARIO"))
-                .body("value", equalTo(100.00f))
-                .body("destination", equalTo("Banco BAI"))
-                .body("receivedDate", equalTo("2025-07-19"));
+        recipe.setOrigin(origin);
+        recipe.setValue(value);
+        recipe.setDestination(destination);
+        recipe.setReceivedDate(date);
+        return recipeRepository.save(recipe);
     }
 
-    @Test
-    void testGetRecipeByIdNotFound() {
-        given()
-                .contentType(ContentType.JSON)
-                .when()
-                .get("/api/v1/recipes/999")
-                .then()
-                .statusCode(HttpStatus.NOT_FOUND.value())
-                .body("message",equalTo("Recipe not found with ID: 999"));
-    }
-    @Test
-    void testGetRecipeByIdInvalidId() {
-        given()
-                .contentType(ContentType.JSON)
-                .when()
-                .get("/api/v1/recipes/invalid")
-                .then()
-                .statusCode(HttpStatus.BAD_REQUEST.value());
-    }
+    @Nested
+    class CreateRecipeTests {
 
-    @Test
-    void testUpdateRecipeWithValidIdAndData() {
-        // Arrange: Criar uma receita no banco
-        Recipe recipe = new Recipe();
-        recipe.setOrigin(RecipeOrigin.SALARIO);
-        recipe.setValue(new BigDecimal("1000.00"));
-        recipe.setDestination("Banco BAI");
-        recipe.setReceivedDate(LocalDate.of(2025, 7, 18));
-        recipe.setMonth(7);
-        recipe.setYear(2025);
-        recipe.setCreatedAt(LocalDate.of(2025, 7, 18));
-        recipe.setUpdatedAt(LocalDate.of(2025, 7, 18));
-        recipe = recipeRepository.save(recipe);
+        @Test
+        void shouldCreateRecipeWithValidData() {
+            String json = """
+                {
+                    "origin": "SALARIO",
+                    "value": 100.00,
+                    "destination": "Banco BAI",
+                    "receivedDate": "2025-07-19"
+                }
+                """;
 
-        String validJson = """
-            {
-                "origin": "SALARIO",
-                "value": 5000.00,
-                "destination": "Banco BIC",
-                "receivedDate": "2025-07-19"
-            }
-            """;
+            given()
+                    .contentType(ContentType.JSON)
+                    .body(json)
+                    .when()
+                    .post("/api/v1/recipes")
+                    .then()
+                    .statusCode(HttpStatus.CREATED.value());
+        }
 
-        // Act & Assert
-        given()
-                .contentType(ContentType.JSON)
-                .body(validJson)
-                .when()
-                .put("/api/v1/recipes/" + recipe.getId())
-                .then()
-                .statusCode(HttpStatus.OK.value())
-                .body("id", equalTo(recipe.getId().intValue()))
-                .body("origin", equalTo("SALARIO"))
-                .body("value", equalTo(5000.00f))
-                .body("destination", equalTo("Banco BIC"))
-                .body("receivedDate", equalTo("2025-07-19"))
-                .body("month", equalTo(7))
-                .body("year", equalTo(2025))
-                .body("createdAt", equalTo(LocalDate.now().toString()))
-                .body("updatedAt", equalTo(LocalDate.now().toString()));
-    }
-    @Test
-    void testUpdateRecipeWithInvalidId() {
-        String validJson = """
-            {
-                "origin": "SALARIO",
-                "value": 5000.00,
-                "destination": "Banco BIC",
-                "receivedDate": "2025-07-19"
-            }
-            """;
+        @Test
+        void shouldFailToCreateRecipeWithInvalidData() {
+            String invalidJson = """
+                {
+                    "origin": null,
+                    "value": -10,
+                    "destination": "",
+                    "receivedDate": null
+                }
+                """;
 
-        given()
-                .contentType(ContentType.JSON)
-                .body(validJson)
-                .when()
-                .put("/api/v1/recipes/999")
-                .then()
-                .statusCode(HttpStatus.NOT_FOUND.value())
-                .body("message", equalTo("Recipe not found with ID: 999"));
+            given()
+                    .contentType(ContentType.JSON)
+                    .body(invalidJson)
+                    .when()
+                    .post("/api/v1/recipes")
+                    .then()
+                    .statusCode(HttpStatus.BAD_REQUEST.value())
+                    .body("message", equalTo("Validation failed"))
+                    .body("fieldErrors.origin", equalTo("Origin is required"))
+                    .body("fieldErrors.value", equalTo("Value must be positive"))
+                    .body("fieldErrors.destination", equalTo("Destination is required"))
+                    .body("fieldErrors.receivedDate", equalTo("Received date is required"));
+        }
+
+        @Test
+        void shouldFailToCreateRecipeWithFutureDate() {
+            String json = """
+                {
+                    "origin": "SALARIO",
+                    "value": 100.00,
+                    "destination": "Banco BAI",
+                    "receivedDate": "2025-08-22"
+                }
+                """;
+
+            given()
+                    .contentType(ContentType.JSON)
+                    .body(json)
+                    .when()
+                    .post("/api/v1/recipes")
+                    .then()
+                    .statusCode(HttpStatus.BAD_REQUEST.value())
+                    .body("message", equalTo("Validation failed"))
+                    .body("fieldErrors.receivedDate", equalTo("Received date must be in the past or present"));
+        }
     }
 
-    @Test
-    void testUpdateRecipeWithInvalidData() {
-        // Arrange: Criar uma receita no banco
-        Recipe recipe = new Recipe();
-        recipe.setOrigin(RecipeOrigin.SALARIO);
-        recipe.setValue(new BigDecimal("1000.00"));
-        recipe.setDestination("Banco BAI");
-        recipe.setReceivedDate(LocalDate.of(2025, 7, 18));
-        recipe = recipeRepository.save(recipe);
+    @Nested
+    class GetRecipeTests {
 
-        String invalidJson = """
-            {
-                "origin": null,
-                "value": -10,
-                "destination": "",
-                "receivedDate": null
-            }
-            """;
+        @Test
+        void shouldGetRecipeById() {
+            Recipe recipe = createRecipe(RecipeOrigin.SALARIO, VALID_VALUE, "Banco BAI", VALID_DATE);
 
-        given()
-                .contentType(ContentType.JSON)
-                .body(invalidJson)
-                .when()
-                .put("/api/v1/recipes/" + recipe.getId())
-                .then()
-                .statusCode(HttpStatus.BAD_REQUEST.value())
-                .body("message", equalTo("Validation failed"))
-                .body("fieldErrors.origin", equalTo("Origin is required"))
-                .body("fieldErrors.value", equalTo("Value must be positive"))
-                .body("fieldErrors.destination", equalTo("Destination is required"))
-                .body("fieldErrors.receivedDate", equalTo("Received date is required"));
+            given()
+                    .contentType(ContentType.JSON)
+                    .when()
+                    .get("/api/v1/recipes/" + recipe.getId())
+                    .then()
+                    .statusCode(HttpStatus.OK.value())
+                    .body("id", equalTo(recipe.getId().intValue()))
+                    .body("origin", equalTo("SALARIO"))
+                    .body("value", equalTo(100.00f))
+                    .body("destination", equalTo("Banco BAI"))
+                    .body("receivedDate", equalTo("2025-07-19"));
+        }
+
+        @Test
+        void shouldReturn404ForNonExistingRecipe() {
+            given()
+                    .contentType(ContentType.JSON)
+                    .when()
+                    .get("/api/v1/recipes/999")
+                    .then()
+                    .statusCode(HttpStatus.NOT_FOUND.value())
+                    .body("message", equalTo("Recipe not found with ID: 999"));
+        }
+
+        @Test
+        void shouldReturn400ForInvalidIdFormat() {
+            given()
+                    .contentType(ContentType.JSON)
+                    .when()
+                    .get("/api/v1/recipes/invalid")
+                    .then()
+                    .statusCode(HttpStatus.BAD_REQUEST.value());
+        }
     }
 
-    @Test
-    void testUpdateRecipeWithFutureDate() {
-        // Arrange: Criar uma receita no banco
-        Recipe recipe = new Recipe();
-        recipe.setOrigin(RecipeOrigin.SALARIO);
-        recipe.setValue(new BigDecimal("1000.00"));
-        recipe.setDestination("Banco BAI");
-        recipe.setReceivedDate(LocalDate.of(2025, 7, 18));
-        recipe = recipeRepository.save(recipe);
+    @Nested
+    class GetAllRecipesTests {
 
-        String futureDateJson = """
-            {
-                "origin": "SALARIO",
-                "value": 5000.00,
-                "destination": "Banco BIC",
-                "receivedDate": "2025-08-22"
-            }
-            """;
+        @Test
+        void shouldReturnPaginatedRecipes() {
+            createRecipe(RecipeOrigin.SALARIO, VALID_VALUE, "Banco BAI", VALID_DATE);
+            createRecipe(RecipeOrigin.BONUS, new BigDecimal("200.00"), "Banco BIC", LocalDate.of(2025, 7, 18));
 
-        given()
-                .contentType(ContentType.JSON)
-                .body(futureDateJson)
-                .when()
-                .put("/api/v1/recipes/" + recipe.getId())
-                .then()
-                .statusCode(HttpStatus.BAD_REQUEST.value())
-                .body("message", equalTo("Validation failed"))
-                .body("fieldErrors.receivedDate", equalTo("Received date must be in the past or present"));
+            given()
+                    .contentType(ContentType.JSON)
+                    .queryParam("page", 0)
+                    .queryParam("size", 1)
+                    .when()
+                    .get("/api/v1/recipes")
+                    .then()
+                    .statusCode(HttpStatus.OK.value())
+                    .body("content", hasSize(1))
+                    .body("totalElements", equalTo(2))
+                    .body("totalPages", equalTo(2))
+                    .body("size", equalTo(1))
+                    .body("number", equalTo(0));
+        }
+
+        @Test
+        void shouldFilterRecipesByOriginAndDestination() {
+            createRecipe(RecipeOrigin.SALARIO, VALID_VALUE, "Banco BAI", VALID_DATE);
+            createRecipe(RecipeOrigin.APOSENTADORIA, new BigDecimal("200.00"), "Banco BIC", LocalDate.of(2025, 7, 18));
+
+            given()
+                    .contentType(ContentType.JSON)
+                    .queryParam("origin", "SALARIO")
+                    .queryParam("destination", "Banco BAI")
+                    .queryParam("page", 0)
+                    .queryParam("size", 10)
+                    .when()
+                    .get("/api/v1/recipes")
+                    .then()
+                    .statusCode(HttpStatus.OK.value())
+                    .body("content", hasSize(1))
+                    .body("content[0].origin", equalTo("SALARIO"))
+                    .body("content[0].destination", equalTo("Banco BAI"))
+                    .body("totalElements", equalTo(1));
+        }
+
+        @Test
+        void shouldFilterRecipesByDateRange() {
+            createRecipe(RecipeOrigin.SALARIO, VALID_VALUE, "Banco BAI", VALID_DATE);
+            createRecipe(RecipeOrigin.SALARIO, new BigDecimal("200.00"), "Banco BIC", LocalDate.of(2025, 6, 18));
+
+            given()
+                    .contentType(ContentType.JSON)
+                    .queryParam("receivedDateFrom", "2025-07-01")
+                    .queryParam("receivedDateTo", "2025-07-31")
+                    .queryParam("page", 0)
+                    .queryParam("size", 10)
+                    .when()
+                    .get("/api/v1/recipes")
+                    .then()
+                    .statusCode(HttpStatus.OK.value())
+                    .body("content", hasSize(1))
+                    .body("content[0].receivedDate", equalTo("2025-07-19"))
+                    .body("totalElements", equalTo(1));
+        }
     }
 
-    @Test
-    void testUpdateRecipeWithInvalidIdFormat() {
-        String validJson = """
-            {
-                "origin": "SALARIO",
-                "value": 5000.00,
-                "destination": "Banco BIC",
-                "receivedDate": "2025-07-19"
-            }
-            """;
+    @Nested
+    class UpdateRecipeTests {
 
-        given()
-                .contentType(ContentType.JSON)
-                .body(validJson)
-                .when()
-                .put("/api/v1/recipes/invalid")
-                .then()
-                .statusCode(HttpStatus.BAD_REQUEST.value());
+        @Test
+        void shouldUpdateRecipeSuccessfully() {
+            Recipe recipe = createRecipe(RecipeOrigin.SALARIO, new BigDecimal("1000.00"), "Banco BAI", LocalDate.of(2025, 7, 18));
+
+            String validJson = """
+                {
+                    "origin": "SALARIO",
+                    "value": 5000.00,
+                    "destination": "Banco BIC",
+                    "receivedDate": "2025-07-19"
+                }
+                """;
+
+            given()
+                    .contentType(ContentType.JSON)
+                    .body(validJson)
+                    .when()
+                    .put("/api/v1/recipes/" + recipe.getId())
+                    .then()
+                    .statusCode(HttpStatus.OK.value())
+                    .body("id", equalTo(recipe.getId().intValue()))
+                    .body("origin", equalTo("SALARIO"))
+                    .body("value", equalTo(5000.00f))
+                    .body("destination", equalTo("Banco BIC"))
+                    .body("receivedDate", equalTo("2025-07-19"))
+                    .body("month", equalTo(7))
+                    .body("year", equalTo(2025));
+        }
+
+        @Test
+        void shouldReturn404WhenUpdatingNonExistingRecipe() {
+            String json = """
+                {
+                    "origin": "SALARIO",
+                    "value": 5000.00,
+                    "destination": "Banco BIC",
+                    "receivedDate": "2025-07-19"
+                }
+                """;
+
+            given()
+                    .contentType(ContentType.JSON)
+                    .body(json)
+                    .when()
+                    .put("/api/v1/recipes/999")
+                    .then()
+                    .statusCode(HttpStatus.NOT_FOUND.value())
+                    .body("message", equalTo("Recipe not found with ID: 999"));
+        }
+
+        @Test
+        void shouldFailToUpdateWithInvalidData() {
+            Recipe recipe = createRecipe(RecipeOrigin.SALARIO, new BigDecimal("1000.00"), "Banco BAI", LocalDate.of(2025, 7, 18));
+
+            String invalidJson = """
+                {
+                    "origin": null,
+                    "value": -10,
+                    "destination": "",
+                    "receivedDate": null
+                }
+                """;
+
+            given()
+                    .contentType(ContentType.JSON)
+                    .body(invalidJson)
+                    .when()
+                    .put("/api/v1/recipes/" + recipe.getId())
+                    .then()
+                    .statusCode(HttpStatus.BAD_REQUEST.value())
+                    .body("message", equalTo("Validation failed"))
+                    .body("fieldErrors.origin", equalTo("Origin is required"))
+                    .body("fieldErrors.value", equalTo("Value must be positive"))
+                    .body("fieldErrors.destination", equalTo("Destination is required"))
+                    .body("fieldErrors.receivedDate", equalTo("Received date is required"));
+        }
+
+        @Test
+        void shouldFailToUpdateWithFutureDate() {
+            Recipe recipe = createRecipe(RecipeOrigin.SALARIO, new BigDecimal("1000.00"), "Banco BAI", LocalDate.of(2025, 7, 18));
+
+            String futureDateJson = """
+                {
+                    "origin": "SALARIO",
+                    "value": 5000.00,
+                    "destination": "Banco BIC",
+                    "receivedDate": "2025-08-22"
+                }
+                """;
+
+            given()
+                    .contentType(ContentType.JSON)
+                    .body(futureDateJson)
+                    .when()
+                    .put("/api/v1/recipes/" + recipe.getId())
+                    .then()
+                    .statusCode(HttpStatus.BAD_REQUEST.value())
+                    .body("message", equalTo("Validation failed"))
+                    .body("fieldErrors.receivedDate", equalTo("Received date must be in the past or present"));
+        }
+
+        @Test
+        void shouldReturn400WhenUpdatingWithInvalidIdFormat() {
+            String json = """
+                {
+                    "origin": "SALARIO",
+                    "value": 5000.00,
+                    "destination": "Banco BIC",
+                    "receivedDate": "2025-07-19"
+                }
+                """;
+
+            given()
+                    .contentType(ContentType.JSON)
+                    .body(json)
+                    .when()
+                    .put("/api/v1/recipes/invalid")
+                    .then()
+                    .statusCode(HttpStatus.BAD_REQUEST.value());
+        }
     }
-
 }
