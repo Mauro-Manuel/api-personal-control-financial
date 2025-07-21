@@ -79,12 +79,23 @@ public class RecipeService {
         updatedRecipe.setMonth(recipeDTO.getReceivedDate().getMonthValue());
         updatedRecipe.setYear(recipeDTO.getReceivedDate().getYear());
 
-        // Save the updated recipe
-        Recipe savedRecipe = recipeRepository.save(updatedRecipe);
 
-        // Convert to response DTO and return
+        Recipe savedRecipe = recipeRepository.save(updatedRecipe);
         return parseObject(savedRecipe, RecipeResponseDTO.class);
     }
+
+    @Transactional
+    public void deleteRecipe(Long id) {
+        if (id == null) {
+            throw new RequiredObjectIsNullException("Recipe ID cannot be null");
+        }
+        logger.info("Deleting recipe with ID: {}", id);
+        if (!recipeRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Recipe not found with ID: " + id);
+        }
+        recipeRepository.deleteById(id);
+    }
+
 
 
 }

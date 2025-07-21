@@ -77,7 +77,6 @@ public class RecipeServiceTest {
         assertEquals(requestDTO.getDestination(), responseDTO.getDestination());
         assertEquals(requestDTO.getReceivedDate(), responseDTO.getReceivedDate());
     }
-
     @Test
     void shouldHaveViolation_whenValueIsNegative() {
         RecipeDTO dto = new RecipeDTO();
@@ -91,7 +90,6 @@ public class RecipeServiceTest {
         assertFalse(violations.isEmpty());
         violations.forEach(v -> System.out.println(v.getPropertyPath() + ": " + v.getMessage()));
     }
-
     @Test
     void shouldHaveViolation_whenValueIsNull() {
         RecipeDTO dto = new RecipeDTO();
@@ -104,7 +102,6 @@ public class RecipeServiceTest {
 
         assertFalse(violations.isEmpty());
     }
-
     @Test
     void shouldHaveViolation_whenReceivedDateIsInFuture() {
         RecipeDTO dto = new RecipeDTO();
@@ -117,7 +114,6 @@ public class RecipeServiceTest {
 
         assertFalse(violations.isEmpty());
     }
-
     @Test
     void shouldThrowRuntimeException_whenRepositoryFails() {
         RecipeDTO dto = new RecipeDTO();
@@ -135,9 +131,8 @@ public class RecipeServiceTest {
 
         assertEquals("Falha na base de dados", ex.getMessage());
     }
-
     @Test
-    void testGetAllRecipesWithFilter(){
+    void shouldReturnFilteredRecipesWhenUsingValidQueryParameters(){
         RecipeFilterDTO filter = new RecipeFilterDTO();
         filter.setOrigin(RecipeOrigin.SALARIO);
         Pageable pageable = PageRequest.of(0, 10);
@@ -160,7 +155,6 @@ public class RecipeServiceTest {
         assertEquals(1, result.getTotalElements());
         assertEquals(RecipeOrigin.SALARIO, result.getContent().get(0).getOrigin());
     }
-
     @Test
     void shouldReturnRecipeResponseDTO_whenGetRecipeByIdWithValidId() {
         // Arrange
@@ -199,7 +193,6 @@ public class RecipeServiceTest {
             assertEquals(recipe.getReceivedDate(), result.getReceivedDate());
         }
     }
-
     @Test
     void shouldThrowResourceNotFoundException_whenGetRecipeByIdWithNonExistentId() {
         // Arrange
@@ -211,7 +204,6 @@ public class RecipeServiceTest {
                 () -> recipeService.getRecipeById(id));
         assertEquals("Recipe not found with ID: " + id, exception.getMessage());
     }
-
     @Test
     void shouldThrowIllegalArgumentException_whenGetRecipeByIdWithNullId() {
         // Act & Assert
@@ -219,7 +211,6 @@ public class RecipeServiceTest {
                 () -> recipeService.getRecipeById(null));
         assertEquals("It is not allowed to persist a null object!", exception.getMessage());
     }
-
     @Test
     void shouldReturnRecipeResponseDTO_whenUpdateRecipeWithValidIdAndDTO() {
         // Arrange
@@ -301,5 +292,36 @@ public class RecipeServiceTest {
         assertThrows(RequiredObjectIsNullException.class, () -> recipeService.updateRecipe(id, null));
         verify(recipeRepository, never()).findById(anyLong());
         verify(recipeRepository, never()).save(any(Recipe.class));
+    }
+    @Test
+    void shouldDeleteRecipe_whenDeleteRecipeWithValidId() {
+        // Arrange
+        Long id = 1L;
+        when(recipeRepository.existsById(id)).thenReturn(true);
+
+        // Act
+        recipeService.deleteRecipe(id);
+
+        // Assert
+        verify(recipeRepository).existsById(id);
+        verify(recipeRepository).deleteById(id);
+    }
+    @Test
+    void shouldThrowResourceNotFoundException_whenDeleteRecipeWithInvalidId() {
+        // Arrange
+        Long id = 999L;
+        when(recipeRepository.existsById(id)).thenReturn(false);
+
+        // Act & Assert
+        assertThrows(ResourceNotFoundException.class, () -> recipeService.deleteRecipe(id));
+        verify(recipeRepository).existsById(id);
+        verify(recipeRepository, never()).deleteById(id);
+    }
+    @Test
+    void shouldThrowRequiredObjectIsNullException_whenDeleteRecipeWithNullId() {
+        // Act & Assert
+        assertThrows(RequiredObjectIsNullException.class, () -> recipeService.deleteRecipe(null));
+        verify(recipeRepository, never()).existsById(anyLong());
+        verify(recipeRepository, never()).deleteById(anyLong());
     }
 }

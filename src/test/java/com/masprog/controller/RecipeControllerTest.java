@@ -349,4 +349,47 @@ class RecipeControllerTest extends AbstractIntegrationTest {
                     .statusCode(HttpStatus.BAD_REQUEST.value());
         }
     }
+
+    @Nested
+    class DeleteRecipeTests {
+
+        @Test
+        void shouldDeleteRecipeWithValidId() {
+            Recipe recipe = createRecipe(RecipeOrigin.SALARIO, VALID_VALUE, "Banco BAI", VALID_DATE);
+
+            given()
+                    .when()
+                    .delete("/api/v1/recipes/" + recipe.getId())
+                    .then()
+                    .statusCode(HttpStatus.NO_CONTENT.value());
+        }
+
+        @Test
+        void shouldReturn404WhenDeletingNonExistingRecipe() {
+            given()
+                    .when()
+                    .delete("/api/v1/recipes/999")
+                    .then()
+                    .statusCode(HttpStatus.NOT_FOUND.value())
+                    .body("message", equalTo("Recipe not found with ID: 999"));
+        }
+
+        @Test
+        void shouldReturn400WhenDeletingWithInvalidIdFormat() {
+            given()
+                    .when()
+                    .delete("/api/v1/recipes/invalid")
+                    .then()
+                    .statusCode(HttpStatus.BAD_REQUEST.value());
+        }
+
+        @Test
+        void shouldReturn400WhenDeletingWithNullId() {
+            given()
+                    .when()
+                    .delete("/api/v1/recipes/")
+                    .then()
+                    .statusCode(HttpStatus.NOT_FOUND.value());
+        }
+    }
 }
