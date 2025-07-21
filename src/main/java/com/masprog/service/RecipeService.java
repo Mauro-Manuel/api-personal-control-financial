@@ -15,6 +15,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+
 import static com.masprog.mapper.ObjectMapper.parseObject;
 
 @Service
@@ -55,6 +57,33 @@ public class RecipeService {
         Recipe recipe = recipeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Recipe not found with ID: " + id));
         return parseObject(recipe, RecipeResponseDTO.class);
+    }
+
+    @Transactional
+    public RecipeResponseDTO updateRecipe(Long id, RecipeDTO recipeDTO) {
+        if (id == null || recipeDTO == null) {
+            throw new RequiredObjectIsNullException("Recipe ID and DTO cannot be null");
+        }
+
+        logger.info("Updating recipe with ID: {}", id);
+
+
+        Recipe existingRecipe = recipeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Recipe not found with ID: " + id));
+
+
+        Recipe updatedRecipe = parseObject(recipeDTO, Recipe.class);
+        updatedRecipe.setId(existingRecipe.getId());
+        updatedRecipe.setCreatedAt(existingRecipe.getCreatedAt());
+        updatedRecipe.setUpdatedAt(LocalDate.now());
+        updatedRecipe.setMonth(recipeDTO.getReceivedDate().getMonthValue());
+        updatedRecipe.setYear(recipeDTO.getReceivedDate().getYear());
+
+        // Save the updated recipe
+        Recipe savedRecipe = recipeRepository.save(updatedRecipe);
+
+        // Convert to response DTO and return
+        return parseObject(savedRecipe, RecipeResponseDTO.class);
     }
 
 
