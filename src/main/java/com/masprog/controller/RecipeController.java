@@ -7,6 +7,7 @@ import com.masprog.dto.RecipeResponseDTO;
 import com.masprog.service.RecipeService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -32,10 +33,9 @@ public class RecipeController implements RecipeControllerDocs {
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
-
     @GetMapping
-    public ResponseEntity<Page<RecipeResponseDTO>> getAllRecipes(RecipeFilterDTO filter,
-                                                                 Pageable pageable) {
+    @Override
+    public ResponseEntity<Page<RecipeResponseDTO>> getAllRecipes(@ParameterObject RecipeFilterDTO filter, @ParameterObject Pageable pageable) {
         Page<RecipeResponseDTO> recipes = recipeService.getAllRecipes(filter, pageable);
         return ResponseEntity.ok(recipes);
     }
