@@ -7,7 +7,6 @@ import java.time.LocalDate;
 
 public class RecipeFilterDTO {
 
-
     private RecipeOrigin origin;
     private String destination;
     private LocalDate receivedDateFrom;
