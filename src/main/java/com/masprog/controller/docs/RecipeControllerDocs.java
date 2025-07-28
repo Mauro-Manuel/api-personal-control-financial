@@ -72,7 +72,7 @@ public interface RecipeControllerDocs {
 
 
 
-    @Operation(summary = "Actualizar informação d receitas",
+    @Operation(summary = "Actualizar informação da receita",
             description = "Actualização das informações da receita",
             tags = {"Receita"},
             responses = {
