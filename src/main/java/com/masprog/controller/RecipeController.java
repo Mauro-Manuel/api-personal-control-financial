@@ -1,10 +1,11 @@
 package com.masprog.controller;
 
+import com.masprog.controller.docs.RecipeControllerDocs;
 import com.masprog.dto.RecipeDTO;
 import com.masprog.dto.RecipeFilterDTO;
 import com.masprog.dto.RecipeResponseDTO;
-import com.masprog.model.Recipe;
 import com.masprog.service.RecipeService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -14,7 +15,8 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("api/v1/recipes")
-public class RecipeController {
+@Tag(name = "Receita", description = "Endpoints para gerenciar receitas")
+public class RecipeController implements RecipeControllerDocs {
 
     private final RecipeService recipeService;
 
@@ -22,11 +24,14 @@ public class RecipeController {
         this.recipeService = recipeService;
     }
 
+
     @PostMapping
-    public ResponseEntity<RecipeResponseDTO> createRecipe( @RequestBody @Valid RecipeDTO recipeDTO){
-       RecipeResponseDTO created = recipeService.createRecipe(recipeDTO);
-       return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    @Override
+    public ResponseEntity<RecipeResponseDTO> create(@RequestBody @Valid RecipeDTO recipe) {
+        RecipeResponseDTO created = recipeService.createRecipe(recipe);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
+
 
     @GetMapping
     public ResponseEntity<Page<RecipeResponseDTO>> getAllRecipes(RecipeFilterDTO filter,
@@ -53,4 +58,6 @@ public class RecipeController {
         recipeService.deleteRecipe(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
+
+
 }
