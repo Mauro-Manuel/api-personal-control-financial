@@ -41,6 +41,7 @@ public class RecipeController implements RecipeControllerDocs {
     }
 
     @GetMapping("/{id}")
+    @Override
     public ResponseEntity<RecipeResponseDTO> getRecipeById(@PathVariable Long id) {
         RecipeResponseDTO recipe = recipeService.getRecipeById(id);
         return ResponseEntity.ok(recipe);
