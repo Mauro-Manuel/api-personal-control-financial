@@ -1,10 +1,12 @@
 package com.masprog.dto;
 
 import com.masprog.model.RecipeOrigin;
+import io.swagger.v3.oas.annotations.Parameter;
 
 import java.time.LocalDate;
 
 public class RecipeFilterDTO {
+
     private RecipeOrigin origin;
     private String destination;
     private LocalDate receivedDateFrom;

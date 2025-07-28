@@ -1,11 +1,13 @@
 package com.masprog.controller;
 
+import com.masprog.controller.docs.RecipeControllerDocs;
 import com.masprog.dto.RecipeDTO;
 import com.masprog.dto.RecipeFilterDTO;
 import com.masprog.dto.RecipeResponseDTO;
-import com.masprog.model.Recipe;
 import com.masprog.service.RecipeService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -14,7 +16,8 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("api/v1/recipes")
-public class RecipeController {
+@Tag(name = "Receita", description = "Endpoints para gerenciar receitas")
+public class RecipeController implements RecipeControllerDocs {
 
     private final RecipeService recipeService;
 
@@ -22,26 +25,30 @@ public class RecipeController {
         this.recipeService = recipeService;
     }
 
+
     @PostMapping
-    public ResponseEntity<RecipeResponseDTO> createRecipe( @RequestBody @Valid RecipeDTO recipeDTO){
-       RecipeResponseDTO created = recipeService.createRecipe(recipeDTO);
-       return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    @Override
+    public ResponseEntity<RecipeResponseDTO> create(@RequestBody @Valid RecipeDTO recipe) {
+        RecipeResponseDTO created = recipeService.createRecipe(recipe);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @GetMapping
-    public ResponseEntity<Page<RecipeResponseDTO>> getAllRecipes(RecipeFilterDTO filter,
-                                                                 Pageable pageable) {
+    @Override
+    public ResponseEntity<Page<RecipeResponseDTO>> getAllRecipes(@ParameterObject RecipeFilterDTO filter, @ParameterObject Pageable pageable) {
         Page<RecipeResponseDTO> recipes = recipeService.getAllRecipes(filter, pageable);
         return ResponseEntity.ok(recipes);
     }
 
     @GetMapping("/{id}")
+    @Override
     public ResponseEntity<RecipeResponseDTO> getRecipeById(@PathVariable Long id) {
         RecipeResponseDTO recipe = recipeService.getRecipeById(id);
         return ResponseEntity.ok(recipe);
     }
 
     @PutMapping("/{id}")
+    @Override
     public ResponseEntity<RecipeResponseDTO> updateRecipe(@PathVariable Long id,
                                                           @Valid @RequestBody RecipeDTO recipeDTO) {
         RecipeResponseDTO updatedRecipe = recipeService.updateRecipe(id, recipeDTO);
@@ -49,8 +56,11 @@ public class RecipeController {
     }
 
     @DeleteMapping("/{id}")
+    @Override
     public ResponseEntity<Void> deleteRecipe(@PathVariable Long id) {
         recipeService.deleteRecipe(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
+
+
 }

@@ -31,23 +31,25 @@ public class RecipeSpecification {
                 ));
             }
 
-            if (filter.getReceivedDateTo() != null) {
-                predicates.add(criteriaBuilder.lessThanOrEqualTo(
-                        root.get("receivedDate"), filter.getReceivedDateTo()
-                ));
-            }
-
             if (filter.getMonth() != null) {
                 predicates.add(criteriaBuilder.equal(
-                        criteriaBuilder.function("month", Integer.class, root.get("receivedDate")),
-                        filter.getMonth()
+                        criteriaBuilder.function(
+                                "TO_CHAR", String.class,
+                                root.get("receivedDate"),
+                                criteriaBuilder.literal("MM")
+                        ),
+                        String.format("%02d", filter.getMonth()) // "06" para Junho
                 ));
             }
 
             if (filter.getYear() != null) {
                 predicates.add(criteriaBuilder.equal(
-                        criteriaBuilder.function("year", Integer.class, root.get("receivedDate")),
-                        filter.getYear()
+                        criteriaBuilder.function(
+                                "TO_CHAR", String.class,
+                                root.get("receivedDate"),
+                                criteriaBuilder.literal("YYYY")
+                        ),
+                        filter.getYear().toString()
                 ));
             }
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
