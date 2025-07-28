@@ -1,6 +1,7 @@
 package com.masprog.model;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.Formula;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -27,7 +28,10 @@ public class Recipe {
     @Column(name = "received_date", nullable = false)
     private LocalDate receivedDate;
 
+   // @Formula("EXTRACT(MONTH FROM received_date)")
     private Integer month;
+
+    //@Formula("EXTRACT(YEAR FROM received_date)")
     private Integer year;
 
     @Column(name = "created_at", nullable = false)
