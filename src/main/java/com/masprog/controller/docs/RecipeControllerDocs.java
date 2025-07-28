@@ -31,7 +31,7 @@ public interface RecipeControllerDocs {
                     @ApiResponse(description = "Internal Server Error", responseCode = "500", content = @Content)
             }
     )
-    ResponseEntity<RecipeResponseDTO> create(@RequestBody RecipeDTO recipe);
+    ResponseEntity<RecipeResponseDTO> create(RecipeDTO recipe);
 
 
     @Operation(summary = "Listar todas receitas",
@@ -68,7 +68,27 @@ public interface RecipeControllerDocs {
                     @ApiResponse(description = "Internal Server Error", responseCode = "500", content = @Content)
             }
     )
-    ResponseEntity<RecipeResponseDTO> getRecipeById(@PathVariable("id") Long id);
+    ResponseEntity<RecipeResponseDTO> getRecipeById(Long id);
+
+
+
+    @Operation(summary = "Actualizar informação d receitas",
+            description = "Actualização das informações da receita",
+            tags = {"Receita"},
+            responses = {
+                    @ApiResponse(
+                            description = "Success",
+                            responseCode = "200",
+                            content = @Content(schema = @Schema(implementation = RecipeResponseDTO.class))
+                    ),
+                    @ApiResponse(description = "No Content", responseCode = "204", content = @Content),
+                    @ApiResponse(description = "Bad Request", responseCode = "400", content = @Content),
+                    @ApiResponse(description = "Unauthorized", responseCode = "401", content = @Content),
+                    @ApiResponse(description = "Not Found", responseCode = "404", content = @Content),
+                    @ApiResponse(description = "Internal Server Error", responseCode = "500", content = @Content)
+            }
+    )
+    ResponseEntity<RecipeResponseDTO> updateRecipe(Long id, RecipeDTO recipeDTO);
 
 
     @Operation(summary = "Apagar uma receita",
@@ -84,7 +104,7 @@ public interface RecipeControllerDocs {
                     @ApiResponse(description = "Internal Server Error", responseCode = "500", content = @Content)
             }
     )
-    ResponseEntity<Void> deleteRecipe(@PathVariable("id") Long id);
+    ResponseEntity<Void> deleteRecipe(Long id);
 
 
 
