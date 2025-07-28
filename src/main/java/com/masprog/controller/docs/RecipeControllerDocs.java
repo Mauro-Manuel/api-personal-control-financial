@@ -1,13 +1,18 @@
 package com.masprog.controller.docs;
 
 import com.masprog.dto.RecipeDTO;
+import com.masprog.dto.RecipeFilterDTO;
 import com.masprog.dto.RecipeResponseDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
+
+import java.util.List;
 
 public interface RecipeControllerDocs {
 
@@ -28,5 +33,23 @@ public interface RecipeControllerDocs {
     ResponseEntity<RecipeResponseDTO> create(@RequestBody RecipeDTO recipe);
 
 
-    
+    @Operation(summary = "Listar todas receitas",
+            description = "listar todas receitas",
+            tags = {"Receita"},
+            responses = {
+                    @ApiResponse(
+                            description = "Success",
+                            responseCode = "200",
+                            content = @Content(schema = @Schema(implementation = RecipeDTO.class))),
+                    @ApiResponse(description = "No Content", responseCode = "204", content = @Content),
+                    @ApiResponse(description = "Bad Request", responseCode = "400", content = @Content),
+                    @ApiResponse(description = "Unauthorized", responseCode = "401", content = @Content),
+                    @ApiResponse(description = "Not Found", responseCode = "404", content = @Content),
+                    @ApiResponse(description = "Internal Server Error", responseCode = "500", content = @Content)
+            }
+    )
+    ResponseEntity<Page<RecipeResponseDTO>> getAllRecipes(RecipeFilterDTO filter, Pageable pageable);
+
+
+
 }
