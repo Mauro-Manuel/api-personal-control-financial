@@ -55,6 +55,7 @@ public class RecipeController implements RecipeControllerDocs {
     }
 
     @DeleteMapping("/{id}")
+    @Override
     public ResponseEntity<Void> deleteRecipe(@PathVariable Long id) {
         recipeService.deleteRecipe(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
