@@ -40,6 +40,12 @@ public class RecipeController implements RecipeControllerDocs {
         return ResponseEntity.ok(recipes);
     }
 
+    @GetMapping("/paginated")
+    public ResponseEntity<Page<RecipeResponseDTO>> getAllRecipesPaginated(@ParameterObject Pageable pageable) {
+        Page<RecipeResponseDTO> recipes = recipeService.getAllRecipesPaginated(pageable);
+        return ResponseEntity.ok(recipes);
+    }
+
     @GetMapping("/{id}")
     @Override
     public ResponseEntity<RecipeResponseDTO> getRecipeById(@PathVariable Long id) {

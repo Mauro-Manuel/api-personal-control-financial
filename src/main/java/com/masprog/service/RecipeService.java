@@ -50,6 +50,14 @@ public class RecipeService {
 
     }
 
+    @Transactional(readOnly = true)
+    public Page<RecipeResponseDTO> getAllRecipesPaginated(Pageable pageable) {
+        logger.info("Retrieving all recipes with pagination (no filters)");
+
+        Page<Recipe> recipePage = recipeRepository.findAll(pageable);
+
+        return recipePage.map(recipe -> parseObject(recipe, RecipeResponseDTO.class));
+    }
 
 
 
