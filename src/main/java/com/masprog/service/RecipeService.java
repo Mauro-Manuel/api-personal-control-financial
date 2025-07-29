@@ -41,7 +41,7 @@ public class RecipeService {
     }
 
     @Transactional(readOnly = true)
-    public Page<RecipeResponseDTO> getAllRecipes(RecipeFilterDTO filter, Pageable pageable){
+    public Page<RecipeResponseDTO> getFilteredRecipes(RecipeFilterDTO filter, Pageable pageable){
         logger.info("Retrieving recipes with filters and pagination");
         Page<Recipe> recipePage = recipeRepository
                 .findAll(RecipeSpecification.withFilters(filter), pageable);
@@ -49,6 +49,9 @@ public class RecipeService {
         return recipePage.map(recipe -> parseObject(recipe, RecipeResponseDTO.class));
 
     }
+
+
+
 
     @Transactional(readOnly = true)
     public RecipeResponseDTO getRecipeById(Long id) {

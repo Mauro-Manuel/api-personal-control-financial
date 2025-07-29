@@ -49,7 +49,7 @@ public interface RecipeControllerDocs {
                     @ApiResponse(description = "Internal Server Error", responseCode = "500", content = @Content)
             }
     )
-    ResponseEntity<Page<RecipeResponseDTO>> getAllRecipes(RecipeFilterDTO filter, Pageable pageable);
+    ResponseEntity<Page<RecipeResponseDTO>> getFilteredRecipes(RecipeFilterDTO filter, Pageable pageable);
 
 
     @Operation(summary = "Listar Receita pelo ID",
