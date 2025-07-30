@@ -276,9 +276,9 @@ class RecipeControllerTest extends AbstractIntegrationTest {
                     .then()
                     .statusCode(HttpStatus.OK.value())
                     .body("content.size()", equalTo(0))
-                    .body("page.totalElements", equalTo(0))
-                    .body("page.totalPages", equalTo(0))
-                    .body("page.number", equalTo(0));
+                    .body("totalElements", equalTo(0))
+                    .body("totalPages", equalTo(0))
+                    .body("number", equalTo(0));
         }
 
 
