@@ -162,10 +162,9 @@ class RecipeControllerTest extends AbstractIntegrationTest {
 
     @Nested
     class GetAllRecipesTests {
-
         @Test
         void shouldReturnPaginatedRecipes() {
-            createRecipe(RecipeOrigin.SALARIO, VALID_VALUE, "Banco BAI", VALID_DATE);
+            createRecipe(RecipeOrigin.SALARIO, VALID_VALUE, "Banco BAI", VALID_DATE); // ex.: 2025-07-19
             createRecipe(RecipeOrigin.BONUS, new BigDecimal("200.00"), "Banco BIC", LocalDate.of(2025, 7, 18));
 
             given()
@@ -173,14 +172,14 @@ class RecipeControllerTest extends AbstractIntegrationTest {
                     .queryParam("page", 0)
                     .queryParam("size", 1)
                     .when()
-                    .get("/api/v1/recipes")
+                    .get("/api/v1/recipes/filtered")
                     .then()
                     .statusCode(HttpStatus.OK.value())
-                    .body("content", hasSize(1))
-                    .body("totalElements", equalTo(2))
-                    .body("totalPages", equalTo(2))
-                    .body("size", equalTo(1))
-                    .body("number", equalTo(0));
+                    .body("content.size()", equalTo(1))
+                    .body("page.totalElements", equalTo(2))
+                    .body("page.totalPages", equalTo(2))
+                    .body("page.size", equalTo(1))
+                    .body("page.number", equalTo(0));
         }
 
         @Test
@@ -195,18 +194,19 @@ class RecipeControllerTest extends AbstractIntegrationTest {
                     .queryParam("page", 0)
                     .queryParam("size", 10)
                     .when()
-                    .get("/api/v1/recipes")
+                    .get("/api/v1/recipes/filtered")
                     .then()
                     .statusCode(HttpStatus.OK.value())
-                    .body("content", hasSize(1))
+                    .body("content.size()", equalTo(1))
                     .body("content[0].origin", equalTo("SALARIO"))
                     .body("content[0].destination", equalTo("Banco BAI"))
-                    .body("totalElements", equalTo(1));
+                    .body("page.totalElements", equalTo(1));
         }
 
         @Test
         void shouldFilterRecipesByDateRange() {
-            createRecipe(RecipeOrigin.SALARIO, VALID_VALUE, "Banco BAI", VALID_DATE);
+            // Garanta que VALID_DATE = 2025-07-19 se você espera "2025-07-19" no assert
+            createRecipe(RecipeOrigin.SALARIO, VALID_VALUE, "Banco BAI", VALID_DATE);         // ex.: 2025-07-19
             createRecipe(RecipeOrigin.SALARIO, new BigDecimal("200.00"), "Banco BIC", LocalDate.of(2025, 6, 18));
 
             given()
@@ -216,14 +216,75 @@ class RecipeControllerTest extends AbstractIntegrationTest {
                     .queryParam("page", 0)
                     .queryParam("size", 10)
                     .when()
-                    .get("/api/v1/recipes")
+                    .get("/api/v1/recipes/filtered")
                     .then()
                     .statusCode(HttpStatus.OK.value())
-                    .body("content", hasSize(1))
+                    .body("content.size()", equalTo(1))
                     .body("content[0].receivedDate", equalTo("2025-07-19"))
-                    .body("totalElements", equalTo(1));
+                    .body("page.totalElements", equalTo(1));
         }
+
+        @Test
+        void shouldReturnAllRecipesPaginated() {
+            createRecipe(RecipeOrigin.SALARIO, VALID_VALUE, "Banco BAI", LocalDate.of(2025, 7, 10));
+            createRecipe(RecipeOrigin.FERIAS, new BigDecimal("1500.00"), "Banco BIC", LocalDate.of(2025, 6, 15));
+            createRecipe(RecipeOrigin.OUTRAS, new BigDecimal("300.00"), "Banco BFA", LocalDate.of(2025, 5, 5));
+
+            given()
+                    .contentType(ContentType.JSON)
+                    .queryParam("page", 0)
+                    .queryParam("size", 2)
+                    .when()
+                    .get("/api/v1/recipes/paginated")
+                    .then()
+                    .statusCode(HttpStatus.OK.value())
+                    .body("content.size()", equalTo(2))
+                    .body("page.totalElements", equalTo(3))
+                    .body("page.totalPages", equalTo(2))
+                    .body("page.size", equalTo(2))
+                    .body("page.number", equalTo(0));
+        }
+
+        @Test
+        void shouldReturnSecondPageOfRecipes() {
+            createRecipe(RecipeOrigin.SALARIO, VALID_VALUE, "Banco BAI", LocalDate.of(2025, 7, 10));
+            createRecipe(RecipeOrigin.FERIAS, new BigDecimal("1500.00"), "Banco BIC", LocalDate.of(2025, 6, 15));
+            createRecipe(RecipeOrigin.OUTRAS, new BigDecimal("300.00"), "Banco BFA", LocalDate.of(2025, 5, 5));
+
+            given()
+                    .contentType(ContentType.JSON)
+                    .queryParam("page", 1)
+                    .queryParam("size", 2)
+                    .when()
+                    .get("/api/v1/recipes/paginated")
+                    .then()
+                    .statusCode(HttpStatus.OK.value())
+                    .body("content.size()", equalTo(1))
+                    .body("page.totalElements", equalTo(3))
+                    .body("page.totalPages", equalTo(2))
+                    .body("page.number", equalTo(1));
+        }
+
+        @Test
+        void shouldReturnEmptyPageIfNoRecipesExist() {
+            given()
+                    .contentType(ContentType.JSON)
+                    .queryParam("page", 0)
+                    .queryParam("size", 5)
+                    .when()
+                    .get("/api/v1/recipes/paginated")
+                    .then()
+                    .statusCode(HttpStatus.OK.value())
+                    .body("content.size()", equalTo(0))
+                    .body("page.totalElements", equalTo(0))
+                    .body("page.totalPages", equalTo(0))
+                    .body("page.number", equalTo(0));
+        }
+
+
     }
+
+
 
     @Nested
     class UpdateRecipeTests {
