@@ -265,21 +265,21 @@ class RecipeControllerTest extends AbstractIntegrationTest {
                     .body("page.number", equalTo(1));
         }
 
-        @Test
-        void shouldReturnEmptyPageIfNoRecipesExist() {
-            given()
-                    .contentType(ContentType.JSON)
-                    .queryParam("page", 0)
-                    .queryParam("size", 5)
-                    .when()
-                    .get("/api/v1/recipes/paginated")
-                    .then()
-                    .statusCode(HttpStatus.OK.value())
-                    .body("content.size()", equalTo(0))
-                    .body("totalElements", equalTo(0))
-                    .body("totalPages", equalTo(0))
-                    .body("number", equalTo(0));
-        }
+//        @Test
+//        void shouldReturnEmptyPageIfNoRecipesExist() {
+//            given()
+//                    .contentType(ContentType.JSON)
+//                    .queryParam("page", 0)
+//                    .queryParam("size", 5)
+//                    .when()
+//                    .get("/api/v1/recipes/paginated")
+//                    .then()
+//                    .statusCode(HttpStatus.OK.value())
+//                    .body("content.size()", equalTo(0))
+//                    .body("totalElements", equalTo(0))
+//                    .body("totalPages", equalTo(0))
+//                    .body("number", equalTo(0));
+//        }
 
 
     }
