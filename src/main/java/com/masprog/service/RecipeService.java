@@ -10,6 +10,8 @@ import com.masprog.repository.RecipeRepository;
 import com.masprog.repository.RecipeSpecification;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -30,6 +32,7 @@ public class RecipeService {
         this.recipeRepository = recipeRepository;
     }
 
+    @CacheEvict(value = {"recipesFilteredCache", "recipesAllCache", "recipeByIdCache"}, allEntries = true)
     @Transactional
     public RecipeResponseDTO createRecipe(RecipeDTO recipeDTO){
 
@@ -40,6 +43,7 @@ public class RecipeService {
         return  parseObject(recipeRepository.save(recipe), RecipeResponseDTO.class);
     }
 
+    @Cacheable(value = "recipesFilteredCache", key = "'filter=' + #filter.toString() + ',page=' + #pageable.pageNumber + ',size=' + #pageable.pageSize")
     @Transactional(readOnly = true)
     public Page<RecipeResponseDTO> getFilteredRecipesPaginated(RecipeFilterDTO filter, Pageable pageable){
         logger.info("Retrieving recipes with filters and pagination");
@@ -50,6 +54,7 @@ public class RecipeService {
 
     }
 
+    @Cacheable(value = "recipesAllCache", key = "'page=' + #pageable.pageNumber + ',size=' + #pageable.pageSize")
     @Transactional(readOnly = true)
     public Page<RecipeResponseDTO> getAllRecipesPaginated(Pageable pageable) {
         logger.info("Retrieving all recipes with pagination (no filters)");
@@ -60,7 +65,7 @@ public class RecipeService {
     }
 
 
-
+    @Cacheable(value = "recipeByIdCache", key = "#id")
     @Transactional(readOnly = true)
     public RecipeResponseDTO getRecipeById(Long id) {
         if (id == null) throw new RequiredObjectIsNullException();
@@ -70,6 +75,7 @@ public class RecipeService {
         return parseObject(recipe, RecipeResponseDTO.class);
     }
 
+    @CacheEvict(value = {"recipesFilteredCache", "recipesAllCache", "recipeByIdCache"}, allEntries = true)
     @Transactional
     public RecipeResponseDTO updateRecipe(Long id, RecipeDTO recipeDTO) {
         if (id == null || recipeDTO == null) {
@@ -95,6 +101,7 @@ public class RecipeService {
         return parseObject(savedRecipe, RecipeResponseDTO.class);
     }
 
+    @CacheEvict(value = {"recipesFilteredCache", "recipesAllCache", "recipeByIdCache"}, allEntries = true)
     @Transactional
     public void deleteRecipe(Long id) {
         if (id == null) {

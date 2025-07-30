@@ -196,7 +196,7 @@ public class RecipeServiceTest {
             verify(recipeRepository, times(1)).findAll(eq(pageable));
         }
     }
-    
+
     @Test
     void shouldReturnRecipeResponseDTO_whenGetRecipeByIdWithValidId() {
         // Arrange
