@@ -32,10 +32,17 @@ jobs:
         run: chmod +x mvnw
 
       - name: Habilitar suporte ao Docker para Testcontainers
-        run: sudo systemctl start docker
+        run: |
+          sudo systemctl enable docker
+          sudo systemctl start docker
+          sudo usermod -aG docker $USER
+          docker ps
+
+      - name: Verificar Docker
+        run: docker run hello-world
 
       - name: Instalar dependências e rodar testes
-        run: ./mvnw clean verify
+        run: ./mvnw clean verify -Pci
 
       - name: Gerar relatório JaCoCo
         run: ./mvnw jacoco:report
