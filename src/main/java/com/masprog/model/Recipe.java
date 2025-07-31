@@ -3,13 +3,16 @@ package com.masprog.model;
 import jakarta.persistence.*;
 import org.hibernate.annotations.Formula;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Objects;
 
 @Entity
 @Table(name = "tb_recipe")
-public class Recipe {
+public class Recipe implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

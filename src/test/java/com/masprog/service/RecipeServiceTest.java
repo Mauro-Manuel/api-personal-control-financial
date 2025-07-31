@@ -16,6 +16,7 @@ import static com.masprog.mapper.ObjectMapper.parseObject;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -43,6 +44,10 @@ public class RecipeServiceTest {
 
     @InjectMocks
     private RecipeService recipeService;
+
+    @Spy
+    @InjectMocks
+    private RecipeService spyRecipeService;
 
     private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
 
@@ -149,12 +154,49 @@ public class RecipeServiceTest {
         when(recipeRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(recipePage);
 
         // Act
-        Page<RecipeResponseDTO> result = recipeService.getAllRecipes(filter, pageable);
+        Page<RecipeResponseDTO> result = recipeService.getFilteredRecipesPaginated(filter, pageable);
 
         // Assert
         assertEquals(1, result.getTotalElements());
         assertEquals(RecipeOrigin.SALARIO, result.getContent().get(0).getOrigin());
     }
+    @Test
+    void shouldReturnAllRecipesPaginated() {
+        // Arrange
+        Pageable pageable = PageRequest.of(0, 10);
+
+        Recipe recipe = new Recipe();
+        recipe.setId(1L);
+        recipe.setOrigin(RecipeOrigin.SALARIO);
+        recipe.setValue(new BigDecimal("5000.00"));
+        recipe.setDestination("Banco BAI");
+        recipe.setReceivedDate(LocalDate.of(2025, 6, 26));
+
+        RecipeResponseDTO dto = new RecipeResponseDTO();
+        dto.setId(1L);
+        dto.setOrigin(RecipeOrigin.SALARIO);
+        dto.setValue(new BigDecimal("5000.00"));
+        dto.setDestination("Banco BAI");
+        dto.setReceivedDate(LocalDate.of(2025, 6, 26));
+
+        Page<Recipe> recipePage = new PageImpl<>(Collections.singletonList(recipe));
+
+        // Mocks
+        when(recipeRepository.findAll(eq(pageable))).thenReturn(recipePage);
+        try (var mockedStatic = mockStatic(com.masprog.mapper.ObjectMapper.class)) {
+            mockedStatic.when(() -> parseObject(recipe, RecipeResponseDTO.class)).thenReturn(dto);
+
+            // Act
+            Page<RecipeResponseDTO> result = recipeService.getAllRecipesPaginated(pageable);
+
+            // Assert
+            assertEquals(1, result.getTotalElements());
+            assertEquals("Banco BAI", result.getContent().get(0).getDestination());
+
+            verify(recipeRepository, times(1)).findAll(eq(pageable));
+        }
+    }
+
     @Test
     void shouldReturnRecipeResponseDTO_whenGetRecipeByIdWithValidId() {
         // Arrange

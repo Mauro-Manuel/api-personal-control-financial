@@ -5,12 +5,15 @@ import jakarta.persistence.Column;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Objects;
 
-public class RecipeResponseDTO {
+public class RecipeResponseDTO implements Serializable {
 
+    private static final long serialVersionUID = 1L;
     private Long id;
     private RecipeOrigin origin;
     private BigDecimal value;

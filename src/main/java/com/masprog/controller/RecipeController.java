@@ -33,10 +33,16 @@ public class RecipeController implements RecipeControllerDocs {
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
-    @GetMapping
+    @GetMapping("/filtered")
     @Override
-    public ResponseEntity<Page<RecipeResponseDTO>> getAllRecipes(@ParameterObject RecipeFilterDTO filter, @ParameterObject Pageable pageable) {
-        Page<RecipeResponseDTO> recipes = recipeService.getAllRecipes(filter, pageable);
+    public ResponseEntity<Page<RecipeResponseDTO>> getFilteredRecipes(@ParameterObject RecipeFilterDTO filter, @ParameterObject Pageable pageable) {
+        Page<RecipeResponseDTO> recipes = recipeService.getFilteredRecipesPaginated(filter, pageable);
+        return ResponseEntity.ok(recipes);
+    }
+
+    @GetMapping("/paginated")
+    public ResponseEntity<Page<RecipeResponseDTO>> getAllRecipesPaginated(@ParameterObject Pageable pageable) {
+        Page<RecipeResponseDTO> recipes = recipeService.getAllRecipesPaginated(pageable);
         return ResponseEntity.ok(recipes);
     }
 
