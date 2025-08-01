@@ -28,7 +28,7 @@ public class ExpenseService {
     }
 
     @Transactional
-    public ExpenseResponseDTO createRecipe(ExpenseDTO expenseDTO){
+    public ExpenseResponseDTO createExpense(ExpenseDTO expenseDTO){
 
         if (expenseDTO == null) throw new RequiredObjectIsNullException();
 
