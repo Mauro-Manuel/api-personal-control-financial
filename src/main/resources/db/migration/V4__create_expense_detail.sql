@@ -1,0 +1,5 @@
+CREATE TABLE expense_detail (
+id SERIAL PRIMARY KEY,
+name VARCHAR(150) NOT NULL,
+category_id INTEGER NOT NULL REFERENCES expense_category(id) ON DELETE CASCADE
+);

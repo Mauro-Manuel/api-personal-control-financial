@@ -1,0 +1,1 @@
+INSERT INTO expense_category (name) VALUES('Educação'),('Pet'),('Saúde'),('Transporte'),('Pessoas'),('Lazer'),('Financeiros');
