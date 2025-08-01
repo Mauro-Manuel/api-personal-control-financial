@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
@@ -24,8 +23,10 @@ public class Expense {
     @ManyToOne(optional = false)
     private ExpenseDetail detail;
 
+    @Column(nullable = false)
     private BigDecimal amount;
 
+    @Column(nullable = false)
     private String source;
 
     @Column(name = "expense_date", nullable = false)
@@ -35,7 +36,6 @@ public class Expense {
 
     private Integer month;
 
-    //@Formula("EXTRACT(YEAR FROM received_date)")
     private Integer year;
 
     @Column(name = "created_at", nullable = false)
