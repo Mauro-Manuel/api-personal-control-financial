@@ -2,6 +2,7 @@ package com.masprog.model;
 
 import jakarta.persistence.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -22,6 +23,10 @@ public class Expense {
 
     @ManyToOne(optional = false)
     private ExpenseDetail detail;
+
+    private BigDecimal amount;
+
+    private String source;
 
     @Column(name = "expense_date", nullable = false)
     private LocalDate expenseDate;
@@ -77,6 +82,22 @@ public class Expense {
         this.detail = detail;
     }
 
+    public BigDecimal getAmount() {
+        return amount;
+    }
+
+    public void setAmount(BigDecimal amount) {
+        this.amount = amount;
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
+    }
+
     public LocalDate getExpenseDate() {
         return expenseDate;
     }
@@ -130,11 +151,11 @@ public class Expense {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Expense expense = (Expense) o;
-        return Objects.equals(id, expense.id) && Objects.equals(category, expense.category) && Objects.equals(detail, expense.detail) && Objects.equals(expenseDate, expense.expenseDate) && Objects.equals(description, expense.description) && Objects.equals(month, expense.month) && Objects.equals(year, expense.year) && Objects.equals(createdAt, expense.createdAt) && Objects.equals(updatedAt, expense.updatedAt);
+        return Objects.equals(id, expense.id) && Objects.equals(category, expense.category) && Objects.equals(detail, expense.detail) && Objects.equals(amount, expense.amount) && Objects.equals(source, expense.source) && Objects.equals(expenseDate, expense.expenseDate) && Objects.equals(description, expense.description) && Objects.equals(month, expense.month) && Objects.equals(year, expense.year) && Objects.equals(createdAt, expense.createdAt) && Objects.equals(updatedAt, expense.updatedAt);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, category, detail, expenseDate, description, month, year, createdAt, updatedAt);
+        return Objects.hash(id, category, detail, amount, source, expenseDate, description, month, year, createdAt, updatedAt);
     }
 }
