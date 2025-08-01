@@ -26,6 +26,8 @@ public class Expense {
     @Column(name = "expense_date", nullable = false)
     private LocalDate expenseDate;
 
+    private String description;
+
     private Integer month;
 
     //@Formula("EXTRACT(YEAR FROM received_date)")
@@ -83,6 +85,14 @@ public class Expense {
         this.expenseDate = expenseDate;
     }
 
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
     public Integer getMonth() {
         return month;
     }
@@ -120,11 +130,11 @@ public class Expense {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Expense expense = (Expense) o;
-        return Objects.equals(id, expense.id) && Objects.equals(category, expense.category) && Objects.equals(detail, expense.detail) && Objects.equals(expenseDate, expense.expenseDate) && Objects.equals(month, expense.month) && Objects.equals(year, expense.year) && Objects.equals(createdAt, expense.createdAt) && Objects.equals(updatedAt, expense.updatedAt);
+        return Objects.equals(id, expense.id) && Objects.equals(category, expense.category) && Objects.equals(detail, expense.detail) && Objects.equals(expenseDate, expense.expenseDate) && Objects.equals(description, expense.description) && Objects.equals(month, expense.month) && Objects.equals(year, expense.year) && Objects.equals(createdAt, expense.createdAt) && Objects.equals(updatedAt, expense.updatedAt);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, category, detail, expenseDate, month, year, createdAt, updatedAt);
+        return Objects.hash(id, category, detail, expenseDate, description, month, year, createdAt, updatedAt);
     }
 }
